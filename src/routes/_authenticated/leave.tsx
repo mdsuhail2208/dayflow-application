@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertCircle, Calendar, CalendarPlus, CheckCircle2, Clock, XCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { EmployeeShell } from "@/components/layout/EmployeeShell";
 import { Badge } from "@/components/ui/badge";
@@ -70,23 +70,33 @@ function LeavePage() {
   const [remarks, setRemarks] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     setError("");
 
-    const { data: emp } = await supabase
+    const { data: emp, error: employeeError } = await supabase
       .from("employees")
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
+    if (employeeError) {
+      setError(employeeError.message);
+      setLoading(false);
+      return;
+    }
     if (!emp) {
+      setError("Your employee profile has not been assigned yet.");
       setLoading(false);
       return;
     }
     setEmployee(emp);
 
-    const [{ data: balData }, { data: typeData }, { data: reqData }] = await Promise.all([
+    const [
+      { data: balData, error: balanceError },
+      { data: typeData, error: typeError },
+      { data: reqData, error: requestError },
+    ] = await Promise.all([
       supabase.from("leave_balances").select("*, leave_types(*)").eq("employee_id", emp.id),
       supabase.from("leave_types").select("*").order("name", { ascending: true }),
       supabase
@@ -96,15 +106,23 @@ function LeavePage() {
         .order("created_at", { ascending: false }),
     ]);
 
+    if (balanceError || typeError || requestError) {
+      setError(
+        balanceError?.message ||
+          typeError?.message ||
+          requestError?.message ||
+          "Unable to load leave data.",
+      );
+    }
     setBalances((balData as LeaveBalance[]) || []);
     setLeaveTypes(typeData || []);
     setRequests((reqData as LeaveRequest[]) || []);
     setLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
     void loadData();
-  }, [user]);
+  }, [loadData]);
 
   // Calculate requested days count
   const requestedDaysCount = () => {
@@ -150,14 +168,16 @@ function LeavePage() {
     // Check balance
     const targetBalance = balances.find((b) => b.leave_type_id === leaveTypeId);
     const daysNeeded = requestedDaysCount();
-    if (targetBalance) {
-      const remaining = Number(targetBalance.total_days - targetBalance.used_days);
-      if (daysNeeded > remaining) {
-        setError(
-          `Insufficient leave balance. You have ${remaining} days left, but requested ${daysNeeded} days.`,
-        );
-        return;
-      }
+    if (!targetBalance) {
+      setError("No balance is configured for this leave type. Contact your HR administrator.");
+      return;
+    }
+    const remaining = Number(targetBalance.total_days - targetBalance.used_days);
+    if (daysNeeded > remaining) {
+      setError(
+        `Insufficient leave balance. You have ${remaining} days left, but requested ${daysNeeded} days.`,
+      );
+      return;
     }
 
     setSubmitting(true);

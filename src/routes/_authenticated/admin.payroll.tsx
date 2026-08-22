@@ -174,7 +174,7 @@ function AdminPayrollPage() {
           const dedNum = Number(d) || 0;
           const net = basicNum + hraNum + allowNum - dedNum;
 
-          await supabase.from("payroll").upsert(
+          const { error: rowError } = await supabase.from("payroll").upsert(
             {
               employee_id: emp.id,
               month: selectedMonth,
@@ -186,6 +186,7 @@ function AdminPayrollPage() {
             },
             { onConflict: "employee_id,month" },
           );
+          if (rowError) throw rowError;
           count++;
         }
       }
@@ -262,6 +263,8 @@ function AdminPayrollPage() {
                       value={basic}
                       onChange={(e) => setBasic(e.target.value)}
                       required
+                      min="0"
+                      step="0.01"
                     />
                   </div>
                   <div className="space-y-2">
@@ -272,6 +275,8 @@ function AdminPayrollPage() {
                       value={hra}
                       onChange={(e) => setHra(e.target.value)}
                       required
+                      min="0"
+                      step="0.01"
                     />
                   </div>
                   <div className="space-y-2">
@@ -282,6 +287,8 @@ function AdminPayrollPage() {
                       value={allowances}
                       onChange={(e) => setAllowances(e.target.value)}
                       required
+                      min="0"
+                      step="0.01"
                     />
                   </div>
                   <div className="space-y-2">
@@ -292,6 +299,8 @@ function AdminPayrollPage() {
                       value={deductions}
                       onChange={(e) => setDeductions(e.target.value)}
                       required
+                      min="0"
+                      step="0.01"
                     />
                   </div>
                 </div>

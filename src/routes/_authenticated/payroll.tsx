@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, FileText, Printer, Wallet } from "lucide-react";
+import { jsPDF } from "jspdf";
 import { useEffect, useState } from "react";
 
 import { EmployeeShell } from "@/components/layout/EmployeeShell";
@@ -39,6 +40,7 @@ function EmployeePayrollPage() {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [payrollHistory, setPayrollHistory] = useState<Payroll[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -46,22 +48,30 @@ function EmployeePayrollPage() {
 
     const loadPayroll = async () => {
       setLoading(true);
+      setError("");
 
-      const { data: emp } = await supabase
+      const { data: emp, error: employeeError } = await supabase
         .from("employees")
         .select("*, departments(name)")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (emp) {
+      if (employeeError) {
+        if (active) setError(employeeError.message);
+      } else if (emp) {
         setEmployee(emp as Employee);
-        const { data: pay } = await supabase
+        const { data: pay, error: payrollError } = await supabase
           .from("payroll")
           .select("*")
           .eq("employee_id", emp.id)
           .order("month", { ascending: false });
 
-        if (active) setPayrollHistory(pay || []);
+        if (active) {
+          setPayrollHistory(pay || []);
+          if (payrollError) setError(payrollError.message);
+        }
+      } else if (active) {
+        setError("Your employee profile has not been assigned yet.");
       }
       if (active) setLoading(false);
     };
@@ -71,6 +81,45 @@ function EmployeePayrollPage() {
       active = false;
     };
   }, [user]);
+
+  const downloadPayslip = (pay: Payroll) => {
+    const pdf = new jsPDF();
+    const empName = fullName || employee?.name || "Employee";
+    const dept = employee?.departments?.name || "General";
+    const desig = employee?.designation || "Team Member";
+    const money = (value: number) => `$${value.toLocaleString()}`;
+
+    pdf.setTextColor("#C2410C");
+    pdf.setFontSize(22);
+    pdf.text("DAYFLOW HR", 20, 24);
+    pdf.setTextColor("#201d1a");
+    pdf.setFontSize(16);
+    pdf.text("Monthly Payslip", 20, 36);
+    pdf.setFontSize(11);
+    pdf.text(`Pay period: ${pay.month}`, 20, 46);
+    pdf.text(`Employee: ${empName}`, 20, 62);
+    pdf.text(`Designation: ${desig}`, 20, 70);
+    pdf.text(`Department: ${dept}`, 20, 78);
+    pdf.line(20, 88, 190, 88);
+
+    const rows = [
+      ["Basic salary", money(Number(pay.basic))],
+      ["HRA", money(Number(pay.hra))],
+      ["Allowances", money(Number(pay.allowances))],
+      ["Deductions", `-${money(Number(pay.deductions))}`],
+      ["Net payable", money(Number(pay.net_pay))],
+    ];
+    rows.forEach(([label, value], index) => {
+      const y = 102 + index * 12;
+      pdf.setFontSize(index === rows.length - 1 ? 13 : 11);
+      pdf.text(label, 24, y);
+      pdf.text(value, 160, y, { align: "right" });
+    });
+    pdf.setFontSize(9);
+    pdf.setTextColor("#6b625a");
+    pdf.text("Computer-generated statement from Dayflow HR.", 20, 180);
+    pdf.save(`Dayflow-Payslip-${pay.month}.pdf`);
+  };
 
   const printPayslip = (pay: Payroll) => {
     const printWindow = window.open("", "_blank");
@@ -187,6 +236,12 @@ function EmployeePayrollPage() {
           </p>
         </div>
 
+        {error ? (
+          <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
+
         <Card className="rounded-lg border-[#ded9d0] bg-white shadow-none">
           <CardHeader>
             <CardTitle className="text-lg">Payslip History</CardTitle>
@@ -228,7 +283,7 @@ function EmployeePayrollPage() {
                         ${Number(pay.net_pay).toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline" onClick={() => printPayslip(pay)}>
+                        <Button size="sm" variant="outline" onClick={() => downloadPayslip(pay)}>
                           <Download className="mr-1.5 size-3.5" /> Download PDF
                         </Button>
                       </TableCell>
