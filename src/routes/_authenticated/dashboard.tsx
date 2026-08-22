@@ -19,6 +19,15 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const { fullName, role, user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && role === "admin") {
+      navigate({ to: "/admin", replace: true });
+    }
+  }, [loading, role, navigate]);
+
+
 
   return (
     <EmployeeShell>
