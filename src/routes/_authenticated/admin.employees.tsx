@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Download, Plus, Search, Upload, UserPlus, Users } from "lucide-react";
+import { Download, Pencil, Plus, Search, Upload, UserPlus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -65,6 +65,14 @@ function AdminEmployeesPage() {
   const [designation, setDesignation] = useState("");
   const [doj, setDoj] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<EmployeeWithDept | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDesignation, setEditDesignation] = useState("");
+  const [editDepartmentId, setEditDepartmentId] = useState("");
+  const [editDoj, setEditDoj] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // CSV Bulk Upload state
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -178,6 +186,49 @@ function AdminEmployeesPage() {
       setError(errMsg);
     }
     setImporting(false);
+  };
+
+  const openEditEmployee = (employee: EmployeeWithDept) => {
+    setEditingEmployee(employee);
+    setEditName(employee.name);
+    setEditDesignation(employee.designation || "");
+    setEditDepartmentId(employee.department_id || "");
+    setEditDoj(employee.date_of_joining || "");
+    setEditPhone(employee.phone || "");
+    setEditAddress(employee.address || "");
+  };
+
+  const handleEditEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEmployee || !editName.trim()) return;
+    setSavingEdit(true);
+    setError("");
+    setMessage("");
+    const { data, error: updateError } = await supabase
+      .from("employees")
+      .update({
+        name: editName.trim(),
+        designation: editDesignation.trim() || null,
+        department_id: editDepartmentId || null,
+        date_of_joining: editDoj || null,
+        phone: editPhone.trim() || null,
+        address: editAddress.trim() || null,
+      })
+      .eq("id", editingEmployee.id)
+      .select("*, departments(name)")
+      .single();
+    setSavingEdit(false);
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+    setEmployees((current) =>
+      current.map((employee) =>
+        employee.id === data.id ? (data as EmployeeWithDept) : employee,
+      ),
+    );
+    setEditingEmployee(null);
+    setMessage(`Updated employee ${data.name}.`);
   };
 
   const exportEmployeesCsv = () => {
@@ -362,6 +413,87 @@ function AdminEmployeesPage() {
       </div>
 
       {/* Employee Table */}
+      <Dialog
+        open={Boolean(editingEmployee)}
+        onOpenChange={(open) => !open && setEditingEmployee(null)}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Employee</DialogTitle>
+            <DialogDescription>Update the employee record and contact details.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditEmployee} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="edit-employee-name">Full Name</Label>
+                <Input
+                  id="edit-employee-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-employee-designation">Designation</Label>
+                <Input
+                  id="edit-employee-designation"
+                  value={editDesignation}
+                  onChange={(e) => setEditDesignation(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-employee-department">Department</Label>
+                <Select value={editDepartmentId} onValueChange={setEditDepartmentId}>
+                  <SelectTrigger id="edit-employee-department">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((department) => (
+                      <SelectItem key={department.id} value={department.id}>
+                        {department.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-employee-doj">Date of Joining</Label>
+                <Input
+                  id="edit-employee-doj"
+                  type="date"
+                  value={editDoj}
+                  onChange={(e) => setEditDoj(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-employee-phone">Phone</Label>
+                <Input
+                  id="edit-employee-phone"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-employee-address">Address</Label>
+                <Input
+                  id="edit-employee-address"
+                  value={editAddress}
+                  onChange={(e) => setEditAddress(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="submit"
+                className="bg-[#C2410C] text-white hover:bg-[#a83a0a]"
+                disabled={savingEdit}
+              >
+                {savingEdit ? "Saving..." : "Save changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       <Card className="rounded-lg border-[#ded9d0] bg-white shadow-none">
         <CardContent className="p-0">
           {loading ? (
@@ -385,6 +517,7 @@ function AdminEmployeesPage() {
                   <TableHead>Designation</TableHead>
                   <TableHead>Date of Joining</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -413,6 +546,16 @@ function AdminEmployeesPage() {
                       <Badge className="bg-emerald-600/10 text-emerald-700 hover:bg-emerald-600/20">
                         Active
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Edit ${emp.name}`}
+                        onClick={() => openEditEmployee(emp)}
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

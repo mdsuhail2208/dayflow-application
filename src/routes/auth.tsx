@@ -55,7 +55,16 @@ function AuthPage() {
       );
       return;
     }
-    if (data.session) navigate({ to: "/dashboard" });
+    if (data.session) {
+      const { data: adminRole } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.session.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      navigate({ to: adminRole ? "/admin" : "/dashboard" });
+    }
   };
 
   const calculatePasswordStrength = (pass: string) => {

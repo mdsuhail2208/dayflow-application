@@ -54,7 +54,7 @@ function ProfilePage() {
   const [docType, setDocType] = useState<"id_proof" | "offer_letter" | "resume" | "other">(
     "id_proof",
   );
-  const [fileName, setFileName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -82,7 +82,10 @@ function ProfilePage() {
         setPhone(empData.phone || "");
         setAddress(empData.address || "");
 
-        const [{ data: taskData }, { data: docData }] = await Promise.all([
+        const [
+          { data: taskData, error: taskError },
+          { data: docData, error: docError },
+        ] = await Promise.all([
           supabase
             .from("onboarding_tasks")
             .select("*")
@@ -98,6 +101,7 @@ function ProfilePage() {
         if (active) {
           setTasks(taskData || []);
           setDocuments(docData || []);
+          if (taskError || docError) setError(taskError?.message || docError?.message || "Failed to load profile details.");
         }
       }
       if (active) setLoading(false);
@@ -130,27 +134,41 @@ function ProfilePage() {
   };
 
   const handleToggleTask = async (taskId: string, currentStatus: boolean) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, is_complete: !currentStatus } : t)),
-    );
+    const nextStatus = !currentStatus;
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, is_complete: nextStatus } : t)));
 
-    await supabase
+    const { error: toggleError } = await supabase
       .from("onboarding_tasks")
-      .update({ is_complete: !currentStatus })
+      .update({ is_complete: nextStatus })
       .eq("id", taskId);
+    if (toggleError) {
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, is_complete: currentStatus } : t)));
+      setError(toggleError.message);
+    }
   };
 
   const handleUploadDocument = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!employee || !fileName.trim()) return;
+    if (!employee || !selectedFile) return;
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      setError("Documents must be smaller than 10 MB.");
+      return;
+    }
     setUploading(true);
+    setError("");
 
-    const newDoc = {
-      employee_id: employee.id,
-      type: docType,
-      file_name: fileName.trim(),
-      file_url: `https://mock-storage.dayflow.hr/docs/${Date.now()}_${encodeURIComponent(fileName.trim())}`,
-    };
+    const filePath = `${employee.id}/${crypto.randomUUID()}-${selectedFile.name}`;
+    const { error: storageError } = await supabase.storage.from("employee-documents").upload(filePath, selectedFile, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+    if (storageError) {
+      setUploading(false);
+      setError(storageError.message);
+      return;
+    }
+
+    const newDoc = { employee_id: employee.id, type: docType, file_name: selectedFile.name, file_url: filePath };
 
     const { data, error: uploadErr } = await supabase
       .from("documents")
@@ -160,12 +178,25 @@ function ProfilePage() {
 
     setUploading(false);
     if (uploadErr) {
+      await supabase.storage.from("employee-documents").remove([filePath]);
       setError(uploadErr.message);
     } else if (data) {
       setDocuments((prev) => [data, ...prev]);
-      setFileName("");
+      setSelectedFile(null);
       setMessage("Document uploaded successfully.");
     }
+  };
+
+  const handleViewDocument = async (doc: Document) => {
+    setError("");
+    const { data, error: signedUrlError } = await supabase.storage
+      .from("employee-documents")
+      .createSignedUrl(doc.file_url, 300);
+    if (signedUrlError || !data?.signedUrl) {
+      setError(signedUrlError?.message || "Unable to open this document.");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   };
 
   const completedTasksCount = tasks.filter((t) => t.is_complete).length;
@@ -391,12 +422,12 @@ function ProfilePage() {
                     </Select>
                   </div>
                   <div className="w-full space-y-2 sm:flex-1">
-                    <Label htmlFor="file-name">Document Title / File Name</Label>
+                    <Label htmlFor="document-file">Document File</Label>
                     <Input
-                      id="file-name"
-                      placeholder="e.g. Passport_Scan.pdf"
-                      value={fileName}
-                      onChange={(e) => setFileName(e.target.value)}
+                      id="document-file"
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                      onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                       required
                     />
                   </div>
@@ -434,10 +465,8 @@ function ProfilePage() {
                             </p>
                           </div>
                         </div>
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="sm" type="button" onClick={() => void handleViewDocument(doc)}>
                             View file
-                          </a>
                         </Button>
                       </div>
                     ))}
