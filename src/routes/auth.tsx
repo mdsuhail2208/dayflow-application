@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -35,7 +34,6 @@ function AuthPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("employee");
   const [signUpError, setSignUpError] = useState("");
   const [signUpNotice, setSignUpNotice] = useState("");
   const [signingUp, setSigningUp] = useState(false);
@@ -74,7 +72,7 @@ function AuthPage() {
       password,
       options: {
         emailRedirectTo: window.location.origin,
-        data: { full_name: name.trim(), role },
+        data: { full_name: name.trim() },
       },
     });
     setSigningUp(false);
@@ -184,24 +182,8 @@ function AuthPage() {
                       onChange={(e) => setPassword(e.target.value)}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Role</Label>
-                    <RadioGroup value={role} onValueChange={setRole} className="grid grid-cols-2 gap-2">
-                      <Label
-                        htmlFor="role-employee"
-                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-border p-3 text-sm font-medium"
-                      >
-                        <RadioGroupItem value="employee" id="role-employee" />
-                        Employee
-                      </Label>
-                      <Label
-                        htmlFor="role-admin"
-                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-border p-3 text-sm font-medium"
-                      >
-                        <RadioGroupItem value="admin" id="role-admin" />
-                        Admin
-                      </Label>
-                    </RadioGroup>
+                  <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                    New accounts start as employees. An HR administrator can grant admin access after signup.
                   </div>
                   {signUpError ? (
                     <p role="alert" className="text-sm font-medium text-destructive">
