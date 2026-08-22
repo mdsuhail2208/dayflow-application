@@ -20,6 +20,10 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedLeaveRouteImport } from './routes/_authenticated/leave'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminAttendanceRouteImport } from './routes/_authenticated/admin.attendance'
+import { Route as AuthenticatedAdminEmployeesRouteImport } from './routes/_authenticated/admin.employees'
+import { Route as AuthenticatedAdminLeaveRouteImport } from './routes/_authenticated/admin.leave'
+import { Route as AuthenticatedAdminPayrollRouteImport } from './routes/_authenticated/admin.payroll'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -75,6 +79,29 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminAttendanceRoute =
+  AuthenticatedAdminAttendanceRouteImport.update({
+    id: '/attendance',
+    path: '/attendance',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminEmployeesRoute =
+  AuthenticatedAdminEmployeesRouteImport.update({
+    id: '/employees',
+    path: '/employees',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminLeaveRoute = AuthenticatedAdminLeaveRouteImport.update({
+  id: '/leave',
+  path: '/leave',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminPayrollRoute =
+  AuthenticatedAdminPayrollRouteImport.update({
+    id: '/payroll',
+    path: '/payroll',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -86,6 +113,10 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leave': typeof AuthenticatedLeaveRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/admin/attendance': typeof AuthenticatedAdminAttendanceRoute
+  '/admin/employees': typeof AuthenticatedAdminEmployeesRoute
+  '/admin/leave': typeof AuthenticatedAdminLeaveRoute
+  '/admin/payroll': typeof AuthenticatedAdminPayrollRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -97,6 +128,10 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leave': typeof AuthenticatedLeaveRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/admin/attendance': typeof AuthenticatedAdminAttendanceRoute
+  '/admin/employees': typeof AuthenticatedAdminEmployeesRoute
+  '/admin/leave': typeof AuthenticatedAdminLeaveRoute
+  '/admin/payroll': typeof AuthenticatedAdminPayrollRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -111,6 +146,10 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/leave': typeof AuthenticatedLeaveRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/admin/attendance': typeof AuthenticatedAdminAttendanceRoute
+  '/_authenticated/admin/employees': typeof AuthenticatedAdminEmployeesRoute
+  '/_authenticated/admin/leave': typeof AuthenticatedAdminLeaveRoute
+  '/_authenticated/admin/payroll': typeof AuthenticatedAdminPayrollRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -125,6 +164,10 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leave'
     | '/profile'
+    | '/admin/attendance'
+    | '/admin/employees'
+    | '/admin/leave'
+    | '/admin/payroll'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -136,6 +179,10 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leave'
     | '/profile'
+    | '/admin/attendance'
+    | '/admin/employees'
+    | '/admin/leave'
+    | '/admin/payroll'
     | '/admin'
   id:
     | '__root__'
@@ -149,6 +196,10 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/leave'
     | '/_authenticated/profile'
+    | '/_authenticated/admin/attendance'
+    | '/_authenticated/admin/employees'
+    | '/_authenticated/admin/leave'
+    | '/_authenticated/admin/payroll'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -239,14 +290,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/attendance': {
+      id: '/_authenticated/admin/attendance'
+      path: '/attendance'
+      fullPath: '/admin/attendance'
+      preLoaderRoute: typeof AuthenticatedAdminAttendanceRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/employees': {
+      id: '/_authenticated/admin/employees'
+      path: '/employees'
+      fullPath: '/admin/employees'
+      preLoaderRoute: typeof AuthenticatedAdminEmployeesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/leave': {
+      id: '/_authenticated/admin/leave'
+      path: '/leave'
+      fullPath: '/admin/leave'
+      preLoaderRoute: typeof AuthenticatedAdminLeaveRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/payroll': {
+      id: '/_authenticated/admin/payroll'
+      path: '/payroll'
+      fullPath: '/admin/payroll'
+      preLoaderRoute: typeof AuthenticatedAdminPayrollRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAttendanceRoute: typeof AuthenticatedAdminAttendanceRoute
+  AuthenticatedAdminEmployeesRoute: typeof AuthenticatedAdminEmployeesRoute
+  AuthenticatedAdminLeaveRoute: typeof AuthenticatedAdminLeaveRoute
+  AuthenticatedAdminPayrollRoute: typeof AuthenticatedAdminPayrollRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAttendanceRoute: AuthenticatedAdminAttendanceRoute,
+  AuthenticatedAdminEmployeesRoute: AuthenticatedAdminEmployeesRoute,
+  AuthenticatedAdminLeaveRoute: AuthenticatedAdminLeaveRoute,
+  AuthenticatedAdminPayrollRoute: AuthenticatedAdminPayrollRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
