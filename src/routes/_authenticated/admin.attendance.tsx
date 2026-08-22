@@ -42,7 +42,7 @@ type AttendanceRecord = Tables<"attendance"> & {
 
 function AdminAttendancePage() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [filterDate, setFilterDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [filterDate, setFilterDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

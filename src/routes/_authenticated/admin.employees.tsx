@@ -109,7 +109,7 @@ function AdminEmployeesPage() {
       user_id: crypto.randomUUID(),
       department_id: departmentId || null,
       designation: designation.trim() || "Team Member",
-      date_of_joining: doj || new Date().toISOString().split("T")[0],
+      date_of_joining: doj || new Date().toISOString().slice(0, 10),
     };
 
     const { data, error: insertErr } = await supabase
@@ -164,7 +164,7 @@ function AdminEmployeesPage() {
             user_id: crypto.randomUUID(),
             designation: empDesig || "Software Engineer",
             department_id: dept?.id || null,
-            date_of_joining: new Date().toISOString().split("T")[0],
+            date_of_joining: new Date().toISOString().slice(0, 10),
           });
           count++;
         }

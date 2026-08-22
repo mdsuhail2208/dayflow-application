@@ -33,7 +33,15 @@ export type Database = {
           employee_id?: string;
           id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "attendance_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       departments: {
         Row: {
@@ -51,7 +59,15 @@ export type Database = {
           id?: string;
           name?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "documents_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       employees: {
         Row: {
@@ -274,6 +290,13 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: "leave_requests_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "leave_requests_leave_type_id_fkey";
             columns: ["leave_type_id"];
             isOneToOne: false;
@@ -367,7 +390,15 @@ export type Database = {
           month?: string;
           net_pay?: number;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "payroll_employee_id_fkey";
+            columns: ["employee_id"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: {
