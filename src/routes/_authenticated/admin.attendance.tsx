@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/_authenticated/admin/attendance")({
   head: () => ({
@@ -41,6 +42,7 @@ type AttendanceRecord = Tables<"attendance"> & {
 };
 
 function AdminAttendancePage() {
+  const { user } = useAuth();
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [filterDate, setFilterDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [search, setSearch] = useState("");
@@ -104,7 +106,12 @@ function AdminAttendancePage() {
 
     const { error: updateErr } = await supabase
       .from("attendance")
-      .update({ check_in: updatedCheckIn, check_out: updatedCheckOut })
+      .update({
+        check_in: updatedCheckIn,
+        check_out: updatedCheckOut,
+        audit_note: auditNote.trim(),
+        overridden_by: user?.id ?? null,
+      })
       .eq("id", editingRecord.id);
 
     setSaving(false);

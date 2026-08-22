@@ -10,28 +10,34 @@ export type Database = {
     Tables: {
       attendance: {
         Row: {
+          audit_note: string | null;
           attendance_date: string;
           check_in: string | null;
           check_out: string | null;
           created_at: string;
           employee_id: string;
           id: string;
+          overridden_by: string | null;
         };
         Insert: {
+          audit_note?: string | null;
           attendance_date?: string;
           check_in?: string | null;
           check_out?: string | null;
           created_at?: string;
           employee_id: string;
           id?: string;
+          overridden_by?: string | null;
         };
         Update: {
+          audit_note?: string | null;
           attendance_date?: string;
           check_in?: string | null;
           check_out?: string | null;
           created_at?: string;
           employee_id?: string;
           id?: string;
+          overridden_by?: string | null;
         };
         Relationships: [
           {

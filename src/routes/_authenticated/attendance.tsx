@@ -22,6 +22,7 @@ export const Route = createFileRoute("/_authenticated/attendance")({
 
 type Attendance = Tables<"attendance">;
 type Employee = Tables<"employees">;
+type AttendanceView = "daily" | "weekly" | "monthly";
 
 const todayStr = () => {
   const date = new Date();
@@ -31,18 +32,12 @@ const todayStr = () => {
   return `${year}-${month}-${day}`;
 };
 
-function isHalfDay(checkInTimeStr: string | null): boolean {
-  if (!checkInTimeStr) return false;
-  const time = new Date(checkInTimeStr);
-  // Cutoff threshold: 10:30 AM
-  return time.getHours() > 10 || (time.getHours() === 10 && time.getMinutes() > 30);
-}
-
 function AttendancePage() {
   const { user } = useAuth();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [todayAttendance, setTodayAttendance] = useState<Attendance | null>(null);
   const [monthLogs, setMonthLogs] = useState<Attendance[]>([]);
+  const [view, setView] = useState<AttendanceView>("monthly");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
@@ -52,32 +47,41 @@ function AttendancePage() {
     setLoading(true);
     setError("");
 
-    const { data: emp } = await supabase
+    const { data: emp, error: employeeError } = await supabase
       .from("employees")
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
+    if (employeeError) {
+      setError(employeeError.message);
+      setLoading(false);
+      return;
+    }
     if (!emp) {
+      setError("Your employee profile has not been assigned yet.");
       setLoading(false);
       return;
     }
     setEmployee(emp);
 
-    const [{ data: todayRecord }, { data: logs }] = await Promise.all([
-      supabase
-        .from("attendance")
-        .select("*")
-        .eq("employee_id", emp.id)
-        .eq("attendance_date", todayStr())
-        .maybeSingle(),
-      supabase
-        .from("attendance")
-        .select("*")
-        .eq("employee_id", emp.id)
-        .order("attendance_date", { ascending: false })
-        .limit(30),
-    ]);
+    const [{ data: todayRecord, error: todayError }, { data: logs, error: logsError }] =
+      await Promise.all([
+        supabase
+          .from("attendance")
+          .select("*")
+          .eq("employee_id", emp.id)
+          .eq("attendance_date", todayStr())
+          .maybeSingle(),
+        supabase
+          .from("attendance")
+          .select("*")
+          .eq("employee_id", emp.id)
+          .order("attendance_date", { ascending: false })
+          .limit(100),
+      ]);
 
+    if (todayError || logsError)
+      setError(todayError?.message || logsError?.message || "Unable to load attendance.");
     setTodayAttendance(todayRecord);
     setMonthLogs(logs || []);
     setLoading(false);
@@ -128,12 +132,22 @@ function AttendancePage() {
   const month = currentDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const weeklyDays = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (6 - index));
+    return date;
+  });
+  const calendarDays =
+    view === "daily"
+      ? [new Date()]
+      : view === "weekly"
+        ? weeklyDays
+        : daysArray.map((day) => new Date(year, month, day));
 
-  const getDayStatus = (dayNum: number) => {
-    const dayDateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+  const getDayStatus = (date: Date) => {
+    const dayDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     const log = monthLogs.find((l) => l.attendance_date === dayDateStr);
     if (!log || !log.check_in) return "absent";
-    if (isHalfDay(log.check_in)) return "half-day";
     return "present";
   };
 
@@ -169,9 +183,6 @@ function AttendancePage() {
                   })}
                 </CardDescription>
               </div>
-              <Badge variant="outline" className="text-xs">
-                Cutoff: 10:30 AM (Half-day rule)
-              </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -186,11 +197,6 @@ function AttendancePage() {
                       })
                     : "Not checked in"}
                 </p>
-                {todayAttendance?.check_in && isHalfDay(todayAttendance.check_in) && (
-                  <Badge className="mt-1 bg-amber-500 text-white text-[10px]">
-                    Late (Half-Day)
-                  </Badge>
-                )}
               </div>
               <div className="rounded-lg border p-4 bg-muted/20">
                 <p className="text-xs text-muted-foreground font-medium">Check-out Time</p>
@@ -230,43 +236,50 @@ function AttendancePage() {
         {/* Monthly Heatmap Calendar */}
         <Card className="rounded-lg border-[#ded9d0] bg-white shadow-none">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <CalendarIcon className="size-5 text-[#2D4F3E]" /> Monthly Heatmap —{" "}
               {new Date().toLocaleString("default", { month: "long", year: "numeric" })}
             </CardTitle>
-            <CardDescription>Visual overview of your attendance record this month.</CardDescription>
+            <CardDescription>Review your attendance by day, week, or month.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-muted-foreground mb-2">
-              <span>Sun</span>
-              <span>Mon</span>
-              <span>Tue</span>
-              <span>Wed</span>
-              <span>Thu</span>
-              <span>Fri</span>
-              <span>Sat</span>
+            <div className="mb-4 flex flex-wrap gap-2">
+              {(
+                Object.keys({
+                  daily: "Daily",
+                  weekly: "Weekly",
+                  monthly: "Monthly",
+                }) as AttendanceView[]
+              ).map((option) => (
+                <Button
+                  key={option}
+                  type="button"
+                  variant={view === option ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setView(option)}
+                >
+                  {option.charAt(0).toUpperCase() + option.slice(1)}
+                </Button>
+              ))}
             </div>
-            <div className="grid grid-cols-7 gap-2">
-              {daysArray.map((dayNum) => {
-                const status = getDayStatus(dayNum);
+            <div className={`grid gap-2 ${view === "daily" ? "grid-cols-1" : "grid-cols-7"}`}>
+              {calendarDays.map((date) => {
+                const status = getDayStatus(date);
                 return (
                   <div
-                    key={dayNum}
+                    key={date.toISOString()}
                     className={`flex flex-col items-center justify-center rounded-lg border p-3 min-h-14 transition-colors ${
                       status === "present"
                         ? "border-emerald-300 bg-emerald-50 text-emerald-900"
-                        : status === "half-day"
-                          ? "border-amber-300 bg-amber-50 text-amber-900"
-                          : "border-gray-200 bg-gray-50/50 text-gray-500"
+                        : "border-gray-200 bg-gray-50/50 text-gray-500"
                     }`}
                   >
-                    <span className="font-bold text-sm">{dayNum}</span>
+                    <span className="text-sm font-bold">{date.getDate()}</span>
+                    <span className="text-[10px] font-semibold text-muted-foreground">
+                      {date.toLocaleDateString(undefined, { weekday: "short" })}
+                    </span>
                     <span className="text-[10px] capitalize font-medium mt-0.5">
-                      {status === "present"
-                        ? "Present"
-                        : status === "half-day"
-                          ? "Half-Day"
-                          : "Absent"}
+                      {status === "present" ? "Present" : "Absent"}
                     </span>
                   </div>
                 );

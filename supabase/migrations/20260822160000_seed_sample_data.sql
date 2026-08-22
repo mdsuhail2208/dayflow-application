@@ -48,3 +48,19 @@ SELECT
   CURRENT_DATE::timestamp + TIME '09:00'
 FROM public.employees
 ON CONFLICT (employee_id, attendance_date) DO NOTHING;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
