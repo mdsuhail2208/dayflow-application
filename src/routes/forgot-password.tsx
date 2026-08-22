@@ -12,7 +12,10 @@ export const Route = createFileRoute("/forgot-password")({
   head: () => ({
     meta: [
       { title: "Reset your password — Dayflow HR" },
-      { name: "description", content: "Request a password reset link for your Dayflow HR account." },
+      {
+        name: "description",
+        content: "Request a password reset link for your Dayflow HR account.",
+      },
       { property: "og:title", content: "Reset your password — Dayflow HR" },
       { property: "og:description", content: "Request a Dayflow password reset link." },
     ],

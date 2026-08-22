@@ -50,8 +50,8 @@ function Landing() {
             Everything your team needs, in one steady flow.
           </h1>
           <p className="text-base text-muted-foreground">
-            Dayflow keeps employee records, attendance, leave and payroll in one place — with separate
-            experiences for employees and admins.
+            Dayflow keeps employee records, attendance, leave and payroll in one place — with
+            separate experiences for employees and admins.
           </p>
           <div className="flex flex-wrap gap-3">
             <Button asChild>

@@ -14,7 +14,6 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Toaster } from "@/components/ui/sonner";
 
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -83,7 +82,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Dayflow — HR management system" },
       {
         name: "description",
-        content: "Dayflow keeps employee records, attendance, leave and payroll in one calm workspace.",
+        content:
+          "Dayflow keeps employee records, attendance, leave and payroll in one calm workspace.",
       },
       { property: "og:title", content: "Dayflow — HR management system" },
       {
@@ -98,7 +98,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap",
       },
       {
         rel: "stylesheet",
@@ -139,6 +139,5 @@ function RootComponent() {
       </AuthProvider>
       <Toaster />
     </QueryClientProvider>
-
   );
 }

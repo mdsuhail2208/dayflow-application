@@ -1,0 +1,184 @@
+import React from 'react';
+import { Link, Outlet } from '@tanstack/react-router';
+import { 
+  Menu, 
+  Home, 
+  Groups, 
+  CalendarToday, 
+  MoreHoriz,
+  UserCircle
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+// --- Shared Components ---
+
+const Logo = () => (
+  <div className="flex items-center gap-2">
+    <span className="font-black text-2xl tracking-tight text-primary">Dayflow HRMS</span>
+  </div>
+);
+
+const NavItem = ({ to, icon: Icon, label, mobile = false }: any) => (
+  <Link
+    to={to}
+    activeProps={{ className: "text-primary font-bold" }}
+    inactiveProps={{ className: "text-slate-500 hover:text-slate-900" }}
+    className={cn(
+      "flex items-center gap-2 transition-colors",
+      mobile ? "flex-col gap-1 text-xs" : "text-sm font-medium"
+    )}
+  >
+    <Icon size={mobile ? 20 : 18} />
+    <span>{label}</span>
+  </Link>
+);
+
+// --- Layout Shells ---
+
+export const EmployeeShell = () => {
+  return (
+    <div className="min-h-screen flex flex-col bg-surface">
+      {/* Top Header */}
+      <header className="sticky top-0 z-40 w-full border-b border-outline-variant bg-white/80 backdrop-blur-md">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <Logo />
+          
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-8">
+            <NavItem to="/" icon={Home} label="Home" />
+            <NavItem to="/staff" icon={Groups} label="Staff" />
+            <NavItem to="/leave" icon={CalendarToday} label="Leave" />
+          </nav>
+
+          <div className="flex items-center gap-4">
+            <span className="hidden sm:inline-block text-xs font-semibold px-2.5 py-0.5 rounded bg-slate-100 text-slate-700">
+              Employee
+            </span>
+            <button className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+              <UserCircle size={24} className="text-slate-600" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 container mx-auto px-4 py-8 pb-24 md:pb-8">
+        <Outlet />
+      </main>
+
+      {/* Mobile Bottom Nav */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-outline-variant flex justify-around items-center px-4 pb-safe z-50">
+        <NavItem to="/" icon={Home} label="Home" mobile />
+        <NavItem to="/staff" icon={Groups} label="Staff" mobile />
+        <NavItem to="/leave" icon={CalendarToday} label="Leave" mobile />
+        <NavItem to="/more" icon={MoreHoriz} label="More" mobile />
+      </nav>
+    </div>
+  );
+};
+
+export const AdminShell = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
+  const sidebarLinks = [
+    { to: '/admin', icon: Home, label: 'Dashboard' },
+    { to: '/admin/directory', icon: Groups, label: 'Directory' },
+    { to: '/admin/payroll', icon: CalendarToday, label: 'Payroll' },
+    { to: '/admin/settings', icon: MoreHoriz, label: 'Settings' },
+  ];
+
+  return (
+    <div className="min-h-screen flex bg-surface">
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-outline-variant sticky top-0 h-screen">
+        <div className="p-6">
+          <Logo />
+        </div>
+        
+        <nav className="flex-1 px-4 py-4 space-y-1">
+          {sidebarLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              activeProps={{ className: "bg-primary/5 text-primary border-r-4 border-primary font-bold" }}
+              inactiveProps={{ className: "text-slate-500 hover:bg-slate-50 hover:text-slate-900" }}
+              className="flex items-center gap-3 px-4 py-3 rounded-md transition-all group"
+            >
+              <link.icon size={20} className="group-hover:scale-110 transition-transform" />
+              <span>{link.label}</span>
+            </Link>
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-outline-variant">
+          <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-lg">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+              AR
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate">Alex Rivera</p>
+              <p className="text-xs text-slate-500 truncate">HR Manager</p>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+              Admin
+            </span>
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile Menu Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-50 lg:hidden backdrop-blur-sm"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Mobile Drawer */}
+      <aside className={cn(
+        "fixed inset-y-0 left-0 w-72 bg-white z-50 transform transition-transform duration-300 ease-in-out lg:hidden",
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="p-6 flex justify-between items-center">
+          <Logo />
+          <button onClick={() => setIsSidebarOpen(false)} className="p-2 text-slate-500">
+            <MoreHoriz size={24} />
+          </button>
+        </div>
+        <nav className="px-4 py-4 space-y-1">
+          {sidebarLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              onClick={() => setIsSidebarOpen(false)}
+              activeProps={{ className: "bg-primary/5 text-primary font-bold" }}
+              className="flex items-center gap-3 px-4 py-3 rounded-md text-slate-600"
+            >
+              <link.icon size={20} />
+              <span>{link.label}</span>
+            </Link>
+          ))}
+        </nav>
+      </aside>
+
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile Header */}
+        <header className="lg:hidden h-16 border-b border-outline-variant bg-white flex items-center justify-between px-4 sticky top-0 z-40">
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2 text-slate-600 hover:bg-slate-100 rounded-md"
+          >
+            <Menu size={24} />
+          </button>
+          <Logo />
+          <div className="w-10 h-10 rounded-full bg-slate-200" />
+        </header>
+
+        {/* Main Content Area */}
+        <main className="flex-1 p-4 md:p-8">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+};

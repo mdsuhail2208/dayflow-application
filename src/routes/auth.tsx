@@ -58,14 +58,34 @@ function AuthPage() {
     if (data.session) navigate({ to: "/dashboard" });
   };
 
+  const calculatePasswordStrength = (pass: string) => {
+    let score = 0;
+    if (pass.length >= 8) score++;
+    if (/\d/.test(pass)) score++;
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(pass)) score++;
+    return score;
+  };
+
+  const passwordStrength = calculatePasswordStrength(password);
+
   const handleSignUp = async (event: React.FormEvent) => {
     event.preventDefault();
     setSignUpError("");
     setSignUpNotice("");
-    if (password.length < 6) {
-      setSignUpError("Password must be at least 6 characters.");
+
+    if (password.length < 8) {
+      setSignUpError("Password must be at least 8 characters.");
       return;
     }
+    if (!/\d/.test(password)) {
+      setSignUpError("Password must contain at least 1 number.");
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      setSignUpError("Password must contain at least 1 special character.");
+      return;
+    }
+
     setSigningUp(true);
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
@@ -88,21 +108,21 @@ function AuthPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-[#FAF8F3] px-4 py-10">
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center gap-2 text-center">
           <Logo />
           <p className="text-sm text-muted-foreground">HR management, without the busywork.</p>
         </div>
 
-        <Card className="shadow-md">
+        <Card className="rounded-lg border-[#ded9d0] bg-white shadow-none">
           <CardHeader className="space-y-1">
             <CardTitle className="text-lg">Welcome to Dayflow</CardTitle>
             <CardDescription>Sign in or create an account to continue.</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-2 rounded-md bg-[#f1ede7]">
                 <TabsTrigger value="signin">Sign in</TabsTrigger>
                 <TabsTrigger value="signup">Sign up</TabsTrigger>
               </TabsList>
@@ -136,7 +156,11 @@ function AuthPage() {
                       {signInError}
                     </p>
                   ) : null}
-                  <Button type="submit" className="w-full" disabled={signingIn}>
+                  <Button
+                    type="submit"
+                    className="w-full rounded-md bg-[#C2410C] text-white hover:bg-[#a83a0a]"
+                    disabled={signingIn}
+                  >
                     {signingIn ? "Signing in…" : "Sign in"}
                   </Button>
                   <Link
@@ -181,9 +205,33 @@ function AuthPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
+                    {password && (
+                      <div className="mt-2 space-y-1">
+                        <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={`h-full transition-all duration-300 ${
+                              passwordStrength === 1
+                                ? "w-1/3 bg-red-500"
+                                : passwordStrength === 2
+                                  ? "w-2/3 bg-yellow-500"
+                                  : passwordStrength === 3
+                                    ? "w-full bg-green-500"
+                                    : "w-0"
+                            }`}
+                          />
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          {passwordStrength === 0 &&
+                            "Weak: Needs min 8 chars, 1 number, 1 special char"}
+                          {passwordStrength === 1 && "Weak: Add numbers and special characters"}
+                          {passwordStrength === 2 && "Medium: Add special characters or numbers"}
+                          {passwordStrength === 3 && "Strong password"}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-                    New accounts start as employees. An HR administrator can grant admin access after signup.
+                  <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                    New accounts default to employee access. Admins can manage roles after sign up.
                   </div>
                   {signUpError ? (
                     <p role="alert" className="text-sm font-medium text-destructive">
@@ -195,7 +243,11 @@ function AuthPage() {
                       {signUpNotice}
                     </p>
                   ) : null}
-                  <Button type="submit" className="w-full" disabled={signingUp}>
+                  <Button
+                    type="submit"
+                    className="w-full rounded-md bg-[#C2410C] text-white hover:bg-[#a83a0a]"
+                    disabled={signingUp}
+                  >
                     {signingUp ? "Creating account…" : "Create account"}
                   </Button>
                 </form>

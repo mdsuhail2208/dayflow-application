@@ -39,7 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const metaName = (nextUser.user_metadata?.["full_name"] as string | undefined) ?? "";
     setFullName(profile?.full_name ?? metaName ?? "");
     const rows = roles ?? [];
-    setRole(rows.some((r) => r.role === "admin") ? "admin" : rows.length > 0 ? "employee" : "employee");
+    setRole(
+      rows.some((r) => r.role === "admin") ? "admin" : rows.length > 0 ? "employee" : "employee",
+    );
   };
 
   const refresh = async () => {
