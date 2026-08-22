@@ -69,11 +69,7 @@ function Dashboard() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!authLoading && role === "admin") navigate({ to: "/admin", replace: true });
-  }, [authLoading, navigate, role]);
-
-  useEffect(() => {
-    if (!user || role === "admin") return;
+    if (!user) return;
     let active = true;
 
     const loadDashboard = async () => {

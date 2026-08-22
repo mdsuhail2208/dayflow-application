@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Calendar, CheckCircle2, Clock, Edit, Search, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { AdminShell } from "@/components/layout/AdminShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -125,203 +124,196 @@ function AdminAttendancePage() {
   );
 
   return (
-    <AdminShell>
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Attendance Logs & Overrides
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Monitor daily check-ins and apply manual corrections with audit notes.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Label htmlFor="date-picker" className="text-xs font-semibold">
-              Filter Date:
-            </Label>
-            <Input
-              id="date-picker"
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="w-40 text-xs"
-            />
-          </div>
-        </div>
-
-        {error ? (
-          <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Attendance Logs & Overrides
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Monitor daily check-ins and apply manual corrections with audit notes.
           </p>
-        ) : null}
-        {message ? (
-          <p role="status" className="rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700">
-            {message}
-          </p>
-        ) : null}
-
-        {/* Stats Row */}
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Card className="rounded-lg border-[#ded9d0] bg-white shadow-none">
-            <CardHeader className="pb-2">
-              <CardDescription>Total Recorded Today</CardDescription>
-              <CardTitle className="text-3xl">{records.length}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card className="rounded-lg border-[#ded9d0] bg-white shadow-none">
-            <CardHeader className="pb-2">
-              <CardDescription className="text-emerald-700 font-medium">Checked In</CardDescription>
-              <CardTitle className="text-3xl text-emerald-800">
-                {records.filter((r) => r.check_in).length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card className="rounded-lg border-[#ded9d0] bg-white shadow-none">
-            <CardHeader className="pb-2">
-              <CardDescription className="text-amber-700 font-medium">
-                Open Sessions
-              </CardDescription>
-              <CardTitle className="text-3xl text-amber-800">
-                {records.filter((r) => r.check_in && !r.check_out).length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
         </div>
-
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+        <div className="flex items-center gap-3">
+          <Label htmlFor="date-picker" className="text-xs font-semibold">
+            Filter Date:
+          </Label>
           <Input
-            placeholder="Search employee by name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            id="date-picker"
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="w-40 text-xs"
           />
         </div>
+      </div>
 
-        {/* Table */}
+      {error ? (
+        <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
+      {message ? (
+        <p role="status" className="rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700">
+          {message}
+        </p>
+      ) : null}
+
+      {/* Stats Row */}
+      <div className="grid gap-4 sm:grid-cols-3">
         <Card className="rounded-lg border-[#ded9d0] bg-white shadow-none">
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">
-                Loading attendance logs...
-              </div>
-            ) : filteredRecords.length === 0 ? (
-              <div className="p-12 text-center text-sm text-muted-foreground">
-                No attendance logs found for {filterDate}.
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Check In</TableHead>
-                    <TableHead>Check Out</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRecords.map((rec) => (
-                    <TableRow key={rec.id}>
-                      <TableCell className="font-medium">
-                        <p className="font-semibold text-sm">{rec.employees?.name || "Employee"}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {rec.employees?.designation || "Team Member"}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        {rec.check_in
-                          ? new Date(rec.check_in).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "—"}
-                      </TableCell>
-                      <TableCell>
-                        {rec.check_out
-                          ? new Date(rec.check_out).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={rec.check_out ? "secondary" : "outline"}
-                          className="text-xs"
-                        >
-                          {rec.check_out ? "Complete" : rec.check_in ? "Checked In" : "Absent"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(rec)}>
-                          <Edit className="mr-1 size-3.5" /> Manual Override
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
+          <CardHeader className="pb-2">
+            <CardDescription>Total Recorded Today</CardDescription>
+            <CardTitle className="text-3xl">{records.length}</CardTitle>
+          </CardHeader>
         </Card>
+        <Card className="rounded-lg border-[#ded9d0] bg-white shadow-none">
+          <CardHeader className="pb-2">
+            <CardDescription className="text-emerald-700 font-medium">Checked In</CardDescription>
+            <CardTitle className="text-3xl text-emerald-800">
+              {records.filter((r) => r.check_in).length}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="rounded-lg border-[#ded9d0] bg-white shadow-none">
+          <CardHeader className="pb-2">
+            <CardDescription className="text-amber-700 font-medium">Open Sessions</CardDescription>
+            <CardTitle className="text-3xl text-amber-800">
+              {records.filter((r) => r.check_in && !r.check_out).length}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
 
-        {/* Override Dialog */}
-        <Dialog
-          open={Boolean(editingRecord)}
-          onOpenChange={(open) => !open && setEditingRecord(null)}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Admin Attendance Correction</DialogTitle>
-              <DialogDescription>
-                Override check-in and check-out times for{" "}
-                <strong>{editingRecord?.employees?.name}</strong>.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSaveOverride} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="checkin-time">Check In Time</Label>
-                  <Input
-                    id="checkin-time"
-                    type="time"
-                    value={checkInTime}
-                    onChange={(e) => setCheckInTime(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="checkout-time">Check Out Time</Label>
-                  <Input
-                    id="checkout-time"
-                    type="time"
-                    value={checkOutTime}
-                    onChange={(e) => setCheckOutTime(e.target.value)}
-                  />
-                </div>
-              </div>
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+        <Input
+          placeholder="Search employee by name..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      {/* Table */}
+      <Card className="rounded-lg border-[#ded9d0] bg-white shadow-none">
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              Loading attendance logs...
+            </div>
+          ) : filteredRecords.length === 0 ? (
+            <div className="p-12 text-center text-sm text-muted-foreground">
+              No attendance logs found for {filterDate}.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee</TableHead>
+                  <TableHead>Check In</TableHead>
+                  <TableHead>Check Out</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRecords.map((rec) => (
+                  <TableRow key={rec.id}>
+                    <TableCell className="font-medium">
+                      <p className="font-semibold text-sm">{rec.employees?.name || "Employee"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {rec.employees?.designation || "Team Member"}
+                      </p>
+                    </TableCell>
+                    <TableCell>
+                      {rec.check_in
+                        ? new Date(rec.check_in).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—"}
+                    </TableCell>
+                    <TableCell>
+                      {rec.check_out
+                        ? new Date(rec.check_out).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={rec.check_out ? "secondary" : "outline"} className="text-xs">
+                        {rec.check_out ? "Complete" : rec.check_in ? "Checked In" : "Absent"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(rec)}>
+                        <Edit className="mr-1 size-3.5" /> Manual Override
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Override Dialog */}
+      <Dialog
+        open={Boolean(editingRecord)}
+        onOpenChange={(open) => !open && setEditingRecord(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Admin Attendance Correction</DialogTitle>
+            <DialogDescription>
+              Override check-in and check-out times for{" "}
+              <strong>{editingRecord?.employees?.name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveOverride} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="audit-note">Audit Note / Reason (Required)</Label>
+                <Label htmlFor="checkin-time">Check In Time</Label>
                 <Input
-                  id="audit-note"
-                  placeholder="e.g. Card reader failure at main gate"
-                  value={auditNote}
-                  onChange={(e) => setAuditNote(e.target.value)}
+                  id="checkin-time"
+                  type="time"
+                  value={checkInTime}
+                  onChange={(e) => setCheckInTime(e.target.value)}
                   required
                 />
               </div>
-              <DialogFooter>
-                <Button type="submit" className="bg-[#C2410C] text-white" disabled={saving}>
-                  {saving ? "Saving Override..." : "Save Override"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </AdminShell>
+              <div className="space-y-2">
+                <Label htmlFor="checkout-time">Check Out Time</Label>
+                <Input
+                  id="checkout-time"
+                  type="time"
+                  value={checkOutTime}
+                  onChange={(e) => setCheckOutTime(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="audit-note">Audit Note / Reason (Required)</Label>
+              <Input
+                id="audit-note"
+                placeholder="e.g. Card reader failure at main gate"
+                value={auditNote}
+                onChange={(e) => setAuditNote(e.target.value)}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="bg-[#C2410C] text-white" disabled={saving}>
+                {saving ? "Saving Override..." : "Save Override"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

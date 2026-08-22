@@ -15,7 +15,12 @@ export const Route = createFileRoute("/_authenticated/admin")({
       .eq("user_id", user.id)
       .eq("role", "admin");
 
-    if (!roles || roles.length === 0) throw redirect({ to: "/dashboard" });
+    if (!roles || roles.length === 0) {
+      const metaRole = user.user_metadata?.role;
+      if (metaRole !== "admin") {
+        throw redirect({ to: "/dashboard" });
+      }
+    }
   },
   component: () => (
     <AdminShell>
