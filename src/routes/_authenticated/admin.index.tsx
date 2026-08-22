@@ -48,17 +48,19 @@ function AdminDashboard() {
   const [pendingLeaveCount, setPendingLeaveCount] = useState(0);
   const [recent, setRecent] = useState<(Attendance & { employees: { name: string } | null })[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
     const load = async () => {
       setLoading(true);
+      setError("");
       const [
-        { data: emp },
-        { data: dept },
-        { data: att },
-        { data: leaveReqs },
-        { data: recentAtt },
+        { data: emp, error: empError },
+        { data: dept, error: deptError },
+        { data: att, error: attError },
+        { data: leaveReqs, error: leaveError },
+        { data: recentAtt, error: recentError },
       ] = await Promise.all([
         supabase.from("employees").select("*, departments(name)"),
         supabase.from("departments").select("*"),
@@ -71,6 +73,8 @@ function AdminDashboard() {
           .limit(6),
       ]);
       if (!active) return;
+      const loadError = empError ?? deptError ?? attError ?? leaveError ?? recentError;
+      if (loadError) setError(loadError.message);
       setEmployees((emp as Employee[]) ?? []);
       setDepartments(dept ?? []);
       setTodayAttendance(att ?? []);
@@ -144,6 +148,16 @@ function AdminDashboard() {
             </Card>
           ))}
         </div>
+      ) : error ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Unable to load admin data</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Check the Supabase migrations and try refreshing this page.</p>
+          </CardContent>
+        </Card>
       ) : (
         <>
           {/* Actionable Pending Approvals Banner */}
@@ -278,7 +292,7 @@ function AdminDashboard() {
                 <CardDescription>Birthdays and work anniversaries.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {employees.slice(0, 3).map((emp, idx) => (
+                {employees.length ? employees.slice(0, 3).map((emp, idx) => (
                   <div
                     key={emp.id}
                     className="flex items-center justify-between rounded-lg border p-3"
@@ -300,7 +314,7 @@ function AdminDashboard() {
                       {idx % 2 === 0 ? "Birthday 🎉" : "1 Year Anniversary 🏆"}
                     </Badge>
                   </div>
-                ))}
+                )) : <p className="text-sm text-muted-foreground">No employee milestones to show yet.</p>}
               </CardContent>
             </Card>
 
